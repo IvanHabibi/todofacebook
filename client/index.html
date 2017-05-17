@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link href="./css/style.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.2/css/materialize.min.css">
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"> -->
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.3.2/vue.min.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Todo</title>
+</head>
+
+<body>
+    <div class="body">
+
+
+        <div v-if="this.userValid === false">
+            <div class="container">
+                <div class="row">
+
+                    <div class="main">
+
+                        <h3>Please Log In, or <a href="#">Sign Up</a></h3>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <a href="http://localhost:3000/users/auth/facebook" class="btn btn-lg btn-primary btn-block indigo darken-2">Facebook</a>
+                            </div>
+                        </div>
+                        <div class="login-or">
+                            <hr class="hr-or">
+                            <span class="span-or">or</span>
+                        </div>
+
+                        <form role="form" v-on:submit.prevent="fungsiLogin">
+                            <div class="form-group">
+                                <label for="inputUsernameEmail">Username or email</label>
+                                <input v-model="username" type="text" class="form-control" id="inputUsernameEmail">
+                            </div>
+                            <div class="form-group">
+                                <a class="pull-right" href="#">Forgot password?</a>
+                                <label for="inputPassword">Password</label>
+                                <input v-model="password" type="password" class="form-control" id="inputPassword">
+                            </div>
+                            <div class="checkbox pull-right">
+                                <label>
+                  <input type="checkbox">
+                  Remember me </label>
+                            </div>
+                            <button type="submit" class="btn btn btn-primary">
+                Log In
+              </button>
+                        </form>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <div v-else>
+            <nav>
+                <div class="nav-wrapper">
+                    <a href="#" data-activates="mobile-demo" class="button-collapse"><i class="material-icons large">list</i></a>
+                    <ul class="right hide-on-med-and-down">
+
+                        <li><a href="index.html" v-on:click="logOut()">logout</a></li>
+                    </ul>
+                    <ul class="side-nav" id="mobile-demo">
+                        <li><a href="index.html" v-on:click="logOut()">logout</a></li>
+                    </ul>
+                </div>
+            </nav>
+            <div class="row" style="padding-top: 70px">
+
+                <div class="col s12 m4 l2"></div>
+                <div class="col s12 m6 l8">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th></th>
+
+                                <th>Task</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="data in todo">
+                                <td scope="row"><i class="material-icons small">label</i></td>
+                                <td>
+                                    <input type="checkbox" v-bind:id="data._id" :checked="data.status == true">
+                                    <label v-bind:for="data._id" @click="changeStatus(data._id)"></label>
+                                </td>
+
+                                <td>
+
+                                    <input type="text" v-bind:value="data.task" v-on:blur="updateTask($event.target.value,data._id)">
+
+                                </td>
+                                <td>
+                                    <a style="cursor: pointer" v-on:click="deleteTask(data._id)"><i class="material-icons small">delete</i></a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <form class="" method="post">
+                                    <td><input type="text" name="" v-model="task" value=""></td>
+                                    <td><a v-on:click="addTask()" class="btn-floating btn-large waves-effect waves-light red"><i class="material-icons">add</i></a></td>
+
+                                </form>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    var app = new Vue({
+        el: '.body',
+        data: {
+
+            number: 0,
+            username: '',
+            password: '',
+            todo: [],
+            task: '',
+            userValid: false,
+            task: ''
+        },
+        methods: {
+            fungsiLogin: function() {
+                axios.post('http://localhost:3000/users/signin', {
+                        username: this.username,
+                        password: this.password
+                    })
+                    .then(function(response) {
+
+
+                        window.localStorage.setItem('access_token', JSON.stringify(response.data.token))
+
+                        app.generateTodo()
+                        app.tokenValidation()
+                    });
+            },
+            addTask: function() {
+                if (this.task !== '') {
+                    axios.post('http://localhost:3000/todos/', {
+
+                        task: this.task,
+                        token: window.localStorage.getItem('access_token')
+
+
+
+                    }).then(function(response) {
+                        this.todo = response.data
+                        app.task = ''
+                        app.generateTodo()
+                    })
+                }
+            },
+            generateTodo: function() {
+
+                axios.get('http://localhost:3000/todos/', {
+                    headers: {
+                        token: window.localStorage.getItem('access_token')
+                    }
+                }).then(function(response) {
+                    app.todo = response.data
+
+                })
+
+            },
+            logOut: function() {
+
+                window.localStorage.removeItem('access_token')
+                app.tokenValidation()
+            },
+            deleteTask: function(idTask) {
+
+                axios.delete(`http://localhost:3000/todos/${idTask}`, {
+                    data: {
+                        token: window.localStorage.getItem('access_token')
+                    }
+
+
+                }).then(function(response) {
+
+                    app.tokenValidation()
+                })
+
+            },
+            changeStatus: function(idTask) {
+
+                axios.put(`http://localhost:3000/todos/status/${idTask}`, {
+
+                    token: window.localStorage.getItem('access_token')
+
+                }).then(function(response) {
+                    console.log(response);
+                    // app.tokenValidation()
+                })
+
+            },
+            updateTask: function(udtTask, idTask) {
+
+                axios.put(`http://localhost:3000/todos/${idTask}`, {
+                    task: udtTask,
+                    token: window.localStorage.getItem('access_token')
+
+                }).then(function(response) {
+
+                    app.tokenValidation()
+                })
+
+            },
+            tokenValidation: function() {
+
+                var tokenValue = localStorage.getItem('access_token')
+
+                if(tokenValue===null){
+                  this.userValid = false
+
+                }else{
+                  axios.post('http://localhost:3000/users/validate', {
+                      token: tokenValue
+                  }).then(function(response) {
+
+                      if (response.data === 'valid') {
+
+                          app.userValid = true
+
+                          app.generateTodo()
+
+                      } else {
+
+                          app.userValid = false
+                      }
+
+                  }).catch(function(response) {})
+                }
+
+            },
+            checkfacebookLogin:function(){
+              axios.get('http://localhost:3000/users/profile')
+              .then(function(response) {
+                console.log(response);
+                window.localStorage.setItem('access_token', JSON.stringify(response.data.token))
+                app.generateTodo()
+                app.tokenValidation()
+              })
+            }
+        },
+
+
+        created: function() {
+            // this.checkfacebookLogin()
+            var urlParams = new URLSearchParams(window.location.search)
+            if(urlParams.get('token')===undefined || urlParams.get('token')===null){
+
+            }else{
+              window.localStorage.setItem('access_token', urlParams.get('token'))
+            }
+
+            this.tokenValidation()
+
+
+
+
+
+        }
+    })
+</script>
+
+</html>
