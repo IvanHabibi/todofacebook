@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 method.getAllUser = (req, res) => {
-    User.find(function(err, users) {
+    User.find(function (err, users) {
         if (err) {
             res.send(err)
         } else {
@@ -15,16 +15,16 @@ method.getAllUser = (req, res) => {
 }
 
 method.insertUser = (req, res) => {
-  console.log(req.body.email);
-  var user = new User();
-  user.name = req.body.username;
-  user.username = req.body.username;
-  user.email= req.body.email;
-  user.account.kind = 'local';
-  user.account.password = passwordHash.generate(req.body.password);
-  user.account.role = req.body.role;
+    console.log(req.body.email);
+    var user = new User();
+    user.name = req.body.username;
+    user.username = req.body.username;
+    user.email = req.body.email;
+    user.account.kind = 'local';
+    user.account.password = passwordHash.generate(req.body.password);
+    user.account.role = req.body.role;
 
-    user.save(function(err, createdUser) {
+    user.save(function (err, createdUser) {
         if (err) {
             res.send(err);
         }
@@ -33,7 +33,7 @@ method.insertUser = (req, res) => {
 }
 
 method.updateUser = (req, res, next) => {
-    User.findById(req.params.id, function(err, user) {
+    User.findById(req.params.id, function (err, user) {
         // Handle any possible database errors
         if (err) {
             res.send(err);
@@ -52,7 +52,7 @@ method.updateUser = (req, res, next) => {
             user.account.role = req.body.role || user.role;
 
 
-            user.save(function(err, user) {
+            user.save(function (err, user) {
                 if (err) {
                     res.send(err)
                 }
@@ -63,7 +63,7 @@ method.updateUser = (req, res, next) => {
 }
 
 method.deleteUser = (req, res) => {
-    User.findByIdAndRemove(req.params.id, function(err, user) {
+    User.findByIdAndRemove(req.params.id, function (err, user) {
         var response = {
             message: "user successfully deleted",
             id: user._id
@@ -73,15 +73,15 @@ method.deleteUser = (req, res) => {
 }
 
 method.signUp = (req, res) => {
-  var user = new User();
-  user.name = req.body.username;
-  user.username = req.body.username;
-  user.email = req.body.email;
-  user.account.kind = 'local';
-  user.account.password = passwordHash.generate(req.body.password);
-  user.account.role = req.body.role;
+    var user = new User();
+    user.name = req.body.username;
+    user.username = req.body.username;
+    user.email = req.body.email;
+    user.account.kind = 'local';
+    user.account.password = passwordHash.generate(req.body.password);
+    user.account.role = req.body.role;
 
-    user.save(function(err, createdUser) {
+    user.save(function (err, createdUser) {
         if (err) {
             res.send(err);
         }
@@ -92,7 +92,7 @@ method.signUp = (req, res) => {
 
 
 method.getOneUser = (req, res) => {
-    User.findById(req.params.id, function(err, user) {
+    User.findById(req.params.id, function (err, user) {
         if (err) {
             res.send(err)
         }
@@ -100,11 +100,12 @@ method.getOneUser = (req, res) => {
     })
 }
 
-method.sendToken = function(req, res) {
+method.sendToken = function (req, res) {
 
     var user = req.user
+    console.log(user)
     if (!user.msg) {
-      console.log('bikin token');
+        console.log('bikin token');
         var token = jwt.sign({
             username: user.username,
             name: user.name,
@@ -114,36 +115,42 @@ method.sendToken = function(req, res) {
         });
 
         res.send({
-            'username' : user.username,
+            'username': user.username,
             'token': token
         })
     }
-    if(user.account.id!==null || user.account.id!==undefined){
-      console.log('masuk sini');
-      res.redirect(`http://127.0.0.1:8080/index.html?token=${token}`);
-      console.log('wew');
-      return
-    }else{
-      console.log('kok ini');
-      res.send(user.msg)
+
+    if (req.user.msg == null) {
+        if (user.account.id !== null || user.account.id !== undefined) {
+            console.log('masuk sini');
+            res.redirect(`http://127.0.0.1:8080/index.html?token=${token}`);
+            console.log('wew');
+            return
+        } else {
+            console.log('kok ini');
+            res.send(user.msg)
+        }
+    } else {
+        res.send(req.user.msg)
     }
+
 
 }
 
-method.userValidation = function(req, res){
+method.userValidation = function (req, res) {
 
-  jwt.verify(req.body.token.replace(/['"]+/g, ''), process.env.SECRET_KEY, (err, decoded) => {
-      if (decoded) {
-        if (decoded.key === process.env.USER_VALIDATION) {
+    jwt.verify(req.body.token.replace(/['"]+/g, ''), process.env.SECRET_KEY, (err, decoded) => {
+        if (decoded) {
+            if (decoded.key === process.env.USER_VALIDATION) {
 
-            res.send('valid');
+                res.send('valid');
+            } else {
+                res.send('invalid user');
+            }
         } else {
-            res.send('invalid user');
+            res.send('not valid')
         }
-      } else {
-        res.send('not valid')
-      }
-  })
+    })
 }
 
 

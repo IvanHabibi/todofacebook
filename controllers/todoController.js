@@ -9,10 +9,12 @@ require('dotenv').config();
 method.getAllTaskbyUser = (req, res) => {
     User.findOne({
         username: req.username
-    }, function(err, user) {
+    }, function (err, user) {
         if (err) {
             // res.send(err)
-            res.send({msg:'todo empty'})
+            res.send({
+                msg: 'todo empty'
+            })
         }
     }).populate('todolist').exec((err, result) => {
         if (result) {
@@ -33,24 +35,24 @@ method.insertTaskToUser = (req, res) => {
         dueDate: req.body.duedate,
         createdAt: req.body.date || new Date().toISOString()
     });
-    todo.save(function(err, todo) {
+    todo.save(function (err, todo) {
         if (err) {
             res.send(err);
         }
         User.findOne({
             username: req.username
-        }, function(err, user) {
+        }, function (err, user) {
             if (err) {
 
                 res.send(err)
             } else {
-              util.createScheduler(user.email,req.body.duedate,req.body.task)
+                //   util.createScheduler(user.email,req.body.duedate,req.body.task)
                 if (user.todolist == undefined) {
                     user.todolist = todo.id
                 } else {
                     user.todolist.push(todo.id)
                 }
-                user.save(function(err, user) {
+                user.save(function (err, user) {
                     if (err) {
                         res.send(err)
                     }
@@ -63,56 +65,56 @@ method.insertTaskToUser = (req, res) => {
 }
 
 method.statusTask = (req, res) => {
-        Todo.findById(req.params.id, function(err, todo) {
+    Todo.findById(req.params.id, function (err, todo) {
 
+        if (err) {
+            res.send(err);
+        } else {
+
+            if (todo.status === false) {
+                todo.status = true
+            } else {
+                todo.status = false
+            }
+            todo.save(function (err, todo) {
                 if (err) {
-                    res.send(err);
-                } else {
-
-                    if (todo.status === false) {
-                        todo.status = true
-                    } else {
-                        todo.status = false
-                    }
-                    todo.save(function(err, todo) {
-                        if (err) {
-                            res.send(err)
-                        }
-
-                        res.send(todo);
-                    });
+                    res.send(err)
                 }
-            })
+
+                res.send(todo);
+            });
         }
+    })
+}
 
-        method.updateTask = (req, res) => {
-          console.log(req.body.task);
-                Todo.findById(req.params.id, function(err, todo) {
+method.updateTask = (req, res) => {
+    console.log(req.body.task);
+    Todo.findById(req.params.id, function (err, todo) {
 
-                        if (err) {
-                            res.send(err);
-                        } else {
-                          todo.task = req.body.task || todo.task
-                            todo.save(function(err, todo) {
-                                if (err) {
-                                    res.send(err)
-                                }
-
-                                res.send(todo);
-                            });
-                        }
-                    })
+        if (err) {
+            res.send(err);
+        } else {
+            todo.task = req.body.task || todo.task
+            todo.save(function (err, todo) {
+                if (err) {
+                    res.send(err)
                 }
 
-                method.deleteTask = (req, res) => {
-                    Todo.findByIdAndRemove(req.params.id, function(err, user) {
-                        var response = {
-                            message: "todo successfully deleted",
-                            id: user._id
-                        };
-                        res.send(response);
-                    });
-                }
+                res.send(todo);
+            });
+        }
+    })
+}
+
+method.deleteTask = (req, res) => {
+    Todo.findByIdAndRemove(req.params.id, function (err, user) {
+        var response = {
+            message: "todo successfully deleted",
+            id: user._id
+        };
+        res.send(response);
+    });
+}
 
 
 
@@ -120,4 +122,4 @@ method.statusTask = (req, res) => {
 
 
 
-        module.exports = method;
+module.exports = method;
